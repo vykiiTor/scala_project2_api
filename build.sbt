@@ -19,8 +19,7 @@ lazy val commonSettings = Seq(
     .map(_ % Test)
 )
 
-lazy val rest = project
-  .in(file("rest"))
+lazy val rest = (project in file("."))
   .settings(
     commonSettings,
     name := "scala3-mlb-rest",
