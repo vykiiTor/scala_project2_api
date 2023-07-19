@@ -32,14 +32,18 @@ object MlbApi extends ZIOAppDefault {
     case Method.GET -> Root / "help" =>
       ZIO.succeed(Response.json(
         """{
-             "/help": "Endpoint for API Help",
-             "/welcome": "Endpoint for API Welcome"
-           }""").withStatus(Status.NotImplemented))
+              "/help": "Endpoint for API Help",
+              "/welcome": "Endpoint for API Welcome",
+              "/game/latest/{homeTeam}/{awayTeam}": "Endpoint for latest game between two teams",
+              "/game/predict/{homeTeam}/{awayTeam}": "Endpoint for prediction of a game between two teams",
+              "/games/count": "Endpoint for number of games in historical data",
+              "/games/history/{team}": "Endpoint for last ten games of a team"
+            }""").withStatus(Status.NotImplemented))
 
     // Endpoint for API Welcome
     case Method.GET -> Root / "welcome" =>
       ZIO.succeed(Response.text("Welcome on Major League Baseball API").withStatus(Status.NotImplemented))
-    case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam => //tofix
+    case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam =>
       for {
         game: Option[Game] <- latest(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = latestGameResponse(game)
@@ -59,7 +63,7 @@ object MlbApi extends ZIOAppDefault {
       for{
         games: List[Game] <- lastTenGames(HomeTeam(aTeam), AwayTeam(aTeam))
         res: Response = historyReponse(games)
-      }yield res
+      } yield res
     case _ =>
       ZIO.succeed(Response.text("Not Found").withStatus(Status.NotFound))
   }.withDefaultErrorResponse
@@ -133,11 +137,12 @@ object ApiService {
       case (Some(d), None) => Response.text(s"Prediction for ${homeTeam} is $d \nPrediction for ${awayTeam} not found").withStatus(Status.Ok)
       case (None, None) => Response.text(s"Prediction for ${homeTeam} not found \nPrediction for ${awayTeam} not found").withStatus(Status.Ok)
   }
+  
   def historyReponse(games:List[Game]): Response = {
     println(games)
     games match
       case Nil => Response.text("No games for this team").withStatus(Status.NotFound)
-      case _ => Response.text(s"${games.mkString("\n")}").withStatus(Status.Ok)
+      case _ => Response.json(s"${games.map(_.toJson)}").withStatus(Status.Ok)
   }
 }
 
@@ -207,7 +212,7 @@ object DataService {
   def latest(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, Option[Game]] = {
     transaction {
       selectOne(
-        sql"SELECT date, season_year, home_team, away_team FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Game]
+        sql"SELECT date, season_year, home_team, away_team, elo_pre_home, elo_pre_away, elo_prob_home, elo_prob_away, pitcher1_home, pitcher1_away FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Game]
       )
     }
   }
@@ -231,7 +236,7 @@ object DataService {
   def lastTenGames(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, List[Game]] = {
     transaction {
       selectAll(
-        sql"SELECT date, season, homeTeam, awayTeam, homeScore, awayScore, eloProbHome, eloProbAway FROM games WHERE homeTeam = ${HomeTeam.unapply(homeTeam)} OR awayTeam = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 20".as[Game]
+        sql"SELECT date, season_year, home_team, away_team, elo_pre_home, elo_pre_away, elo_prob_home, elo_prob_away, pitcher1_home, pitcher1_away FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} OR away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 10".as[Game]
       ).map(_.toList)
     }
   }
