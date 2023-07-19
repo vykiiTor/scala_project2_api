@@ -1,10 +1,16 @@
 package mlb
 
-import zio._
-import zio.jdbc._
-import zio.http._
+import zio.*
+import zio.jdbc.*
+import zio.http.*
+import com.github.tototoshi.csv.*
+import mlb.EloPreHomeTeams.EloPreHomeTeam
+import mlb.EloProbHomeTeams.EloProbHomeTeam
+import zio.stream.ZStream
+import zio.schema.*
+import zio.schema.syntax.*
 
-import java.sql.Date
+import java.time.LocalDate
 
 object MlbApi extends ZIOAppDefault {
 
@@ -21,14 +27,29 @@ object MlbApi extends ZIOAppDefault {
   val endpoints: App[ZConnectionPool] = Http.collectZIO[Request] {
     case Method.GET -> Root / "init" =>
       ZIO.succeed(Response.text("Not Implemented").withStatus(Status.NotImplemented))
+
+      // endpoint for future help info
+    case Method.GET -> Root / "help" =>
+      ZIO.succeed(Response.json(
+        """{
+             "/help": "Endpoint for API Help",
+             "/welcome": "Endpoint for API Welcome"
+           }""").withStatus(Status.NotImplemented))
+
+    // Endpoint for API Welcome
+    case Method.GET -> Root / "welcome" =>
+      ZIO.succeed(Response.text("Welcome on Major League Baseball API").withStatus(Status.NotImplemented))
     case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam =>
       for {
         game: Option[Game] <- latest(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = latestGameResponse(game)
       } yield res
     case Method.GET -> Root / "game" / "predict" / homeTeam / awayTeam =>
-      // FIXME : implement correct logic and response
-      ZIO.succeed(Response.text(s"$homeTeam vs $awayTeam win probability: 0.0"))
+      for{
+        probHomeTeam: Option[Double] <- getEloProbHome(HomeTeam(homeTeam),AwayTeam(awayTeam))
+        probAwayTeam: Option[Double] <- getEloProbAway(HomeTeam(homeTeam),AwayTeam(awayTeam))
+        res: Response = predictResponse(homeTeam, probHomeTeam, awayTeam, probAwayTeam)
+      } yield res
     case Method.GET -> Root / "games" / "count" =>
       for {
         count: Option[Int] <- count
@@ -43,14 +64,52 @@ object MlbApi extends ZIOAppDefault {
       ZIO.succeed(Response.text("Not Found").withStatus(Status.NotFound))
   }.withDefaultErrorResponse
 
+
   val appLogic: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
-    _ <- create *> insertRows
+    conn <- create
+    // Path to CSV file (to be adapted to your environment)
+    //WHEN RUN METHOD USE THIS PATH:
+    //source <- ZIO.succeed(CSVReader.open(("rest\\src\\CsvFiles\\mlb_elo.csv")))
+    //WHEN USING SBT USE THIS PATH:
+    source <- ZIO.succeed(CSVReader.open(("src\\csvfiles\\mlb_elo.csv")))
+    //Stream = List()
+    stream <- ZStream
+      // Read CSV file as string sequence stream
+      .fromIterator[Seq[String]](source.iterator)
+      // Transform each string sequence into a Game object using opaque types
+      .map { values =>
+        val date = GameDates.GameDate(LocalDate.parse(values(0)))
+        val season = SeasonYears.SeasonYear(values(1).toInt)
+        val homeTeam = HomeTeams.HomeTeam(values(4))
+        val awayTeam = AwayTeams.AwayTeam(values(5))
+        val eloPreHome =  EloPreHomeTeams.EloPreHomeTeam(values(6).toDouble)
+        val eloPreAway =  EloPreAwayTeams.EloPreAwayTeam(values(7).toDouble)
+        val eloProbHome = EloProbHomeTeams.EloProbHomeTeam(values(8).toDouble)
+        val eloProbAway = EloProbAwayTeams.EloProbAwayTeam(values(9).toDouble)
+        val pitcherHome = PitcherHomeTeams.PitcherHomeTeam(values(14))
+        val pitcherAway = PitcherAwayTeams.PitcherAwayTeam(values(15))
+
+        Game(date, season, homeTeam, awayTeam,eloPreHome,eloPreAway, eloProbHome, eloProbAway,pitcherHome,pitcherAway)
+      }
+      // Group sets by batches of 1000 to insert them in the database
+      .grouped(1000)
+      // Convert groupings into lists and insert sets into the database
+      .foreach(chunk => insertRows(chunk.toList))
+    // Closing the CSV file
+    _ <- ZIO.succeed(source.close())
+    // Execute a select query in the database
+    res <- select
+    // Display query results in the console
+    _ <- Console.printLine(res)
+    // Launch HTTP server with defined endpoints
     _ <- Server.serve[ZConnectionPool](static ++ endpoints)
   } yield ()
 
   override def run: ZIO[Any, Throwable, Unit] =
     appLogic.provide(createZIOPoolConfig >>> connectionPool, Server.default)
 }
+
+
 
 object ApiService {
 
@@ -68,6 +127,14 @@ object ApiService {
     game match
       case Some(g) => Response.json(g.toJson).withStatus(Status.Ok)
       case None => Response.text("No game found in historical data").withStatus(Status.NotFound)
+  }
+
+  def predictResponse(homeTeam: String, predHome: Option[Double], awayTeam: String, predAway: Option[Double]): Response = {
+    (predHome, predAway) match
+      case (Some(d), Some(a)) => Response.text(s"Prediction for ${homeTeam} is $d \nPrediction for ${awayTeam} is $a").withStatus(Status.Ok)
+      case (None, Some(a)) => Response.text(s"Prediction for ${homeTeam} not found \nPrediction for ${awayTeam} is $a").withStatus(Status.Ok)
+      case (Some(d), None) => Response.text(s"Prediction for ${homeTeam} is $d \nPrediction for ${awayTeam} not found").withStatus(Status.Ok)
+      case (None, None) => Response.text(s"Prediction for ${homeTeam} not found \nPrediction for ${awayTeam} not found").withStatus(Status.Ok)
   }
 }
 
@@ -89,12 +156,22 @@ object DataService {
 
   val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
     execute(
-      sql"CREATE TABLE IF NOT EXISTS games(date DATE NOT NULL, season_year INT NOT NULL, playoff_round INT, home_team VARCHAR(3), away_team VARCHAR(3))"
+      sql"""CREATE TABLE IF NOT EXISTS games(
+            date DATE NOT NULL,
+            season_year INT NOT NULL,
+            home_team VARCHAR(3),
+            away_team VARCHAR(3),
+            elo_pre_home DOUBLE,
+            elo_pre_away DOUBLE,
+            elo_prob_home DOUBLE,
+            elo_prob_away DOUBLE,
+            pitcher1_home VARCHAR(255),
+            pitcher1_away VARCHAR(255),
+            )"""
     )
   }
 
   import GameDates.*
-  import PlayoffRounds.*
   import SeasonYears.*
   import HomeTeams.*
   import AwayTeams.*
@@ -103,9 +180,16 @@ object DataService {
     val rows: List[Game.Row] = games.map(_.toRow)
     transaction {
       insert(
-        sql"INSERT INTO games(date, season_year, playoff_round, home_team, away_team)".values[Game.Row](rows)
+        sql"INSERT INTO games(date, season_year, home_team, away_team)".values[Game.Row](rows)
       )
     }
+  }
+  // Select a game from the database
+  val select: ZIO[ZConnectionPool, Throwable, Option[Game]] = transaction {
+    selectOne(
+      sql"SELECT * FROM games"
+        .as[Game]
+    )
   }
 
   // Should be implemented to replace the `val insertRows` example above. Replace `Any` by the proper case class.
@@ -120,7 +204,23 @@ object DataService {
   def latest(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, Option[Game]] = {
     transaction {
       selectOne(
-        sql"SELECT date, season_year, playoff_round, home_team, away_team FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Game]
+        sql"SELECT date, season_year, home_team, away_team FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Game]
+      )
+    }
+  }
+
+  def getEloProbHome(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, Option[Double]] = {
+    transaction {
+      selectOne(
+        sql"SELECT elo_prob_home FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Double]
+      )
+    }
+  }
+
+  def getEloProbAway(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, Option[Double]] = {
+    transaction {
+      selectOne(
+        sql"SELECT elo_prob_away FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Double]
       )
     }
   }

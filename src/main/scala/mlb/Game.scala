@@ -1,7 +1,8 @@
 package mlb
 
-import zio.json._
-import zio.jdbc._
+import mlb.PitcherHomeTeams.PitcherHomeTeam
+import zio.json.*
+import zio.jdbc.*
 
 import java.time.LocalDate
 
@@ -250,7 +251,6 @@ import PitcherAwayTeams.*
 final case class Game(
     date: GameDate,
     season: SeasonYear,
-    playoffRound: Option[PlayoffRound],
     homeTeam: HomeTeam,
     awayTeam: AwayTeam,
     eloPreHomeTeam: EloPreHomeTeam,
@@ -267,19 +267,18 @@ object Game {
   implicit val gameEncoder: JsonEncoder[Game] = DeriveJsonEncoder.gen[Game]
   implicit val gameDecoder: JsonDecoder[Game] = DeriveJsonDecoder.gen[Game]
 
-  def unapply(game: Game): (GameDate, SeasonYear, Option[PlayoffRound], HomeTeam, AwayTeam, EloPreHomeTeam, EloPreAwayTeam, EloProbHomeTeam, EloProbAwayTeam, PitcherHomeTeam, PitcherAwayTeam) =
-    (game.date, game.season, game.playoffRound, game.homeTeam, game.awayTeam, game.eloPreHomeTeam, game.eloPreAwayTeam, game.eloProbHomeTeam, game.eloProbAwayTeam, game.pitcherHomeTeam, game.pitcherAwayTeam)
+  def unapply(game: Game): (GameDate, SeasonYear, HomeTeam, AwayTeam, EloPreHomeTeam, EloPreAwayTeam, EloProbHomeTeam, EloProbAwayTeam, PitcherHomeTeam, PitcherAwayTeam) =
+    (game.date, game.season, game.homeTeam, game.awayTeam, game.eloPreHomeTeam, game.eloPreAwayTeam, game.eloProbHomeTeam, game.eloProbAwayTeam, game.pitcherHomeTeam, game.pitcherAwayTeam)
 
   // a custom decoder from a tuple
-  type Row = (String, Int, Option[Int], String, String, Double, Double, Double, Double, String, String)
+  type Row = (String, Int, String, String, Double, Double, Double, Double, String, String)
 
   extension (g:Game)
     def toRow: Row =
-      val (d, y, p, h, a, eloPreHomeTeam, eloPreAwayTeam, eloProbHomeTeam, eloProbAwayTeam, pitcherHomeTeam, pitcherAwayTeam) = Game.unapply(g)
+      val (d, y, h, a, eloPreHomeTeam, eloPreAwayTeam, eloProbHomeTeam, eloProbAwayTeam, pitcherHomeTeam, pitcherAwayTeam) = Game.unapply(g)
       (
         GameDate.unapply(d).toString,
         SeasonYear.unapply(y),
-        p.map(PlayoffRound.unapply),
         HomeTeam.unapply(h),
         AwayTeam.unapply(a),
         EloPreHomeTeam.unapply(eloPreHomeTeam), 
@@ -291,14 +290,13 @@ object Game {
       )
 
   implicit val jdbcDecoder: JdbcDecoder[Game] = JdbcDecoder[Row]().map[Game] { t =>
-      val (date, season, maybePlayoff, home, away, eloPreHomeTeam, eloPreAwayTeam, eloProbHomeTeam, eloProbAwayTeam, pitcherHomeTeam, pitcherAwayTeam) = t
+      val (date, season, home, away, eloPreHomeTeam, eloPreAwayTeam, eloProbHomeTeam, eloProbAwayTeam, pitcherHomeTeam, pitcherAwayTeam) = t
       Game(
         GameDate(LocalDate.parse(date)),
         SeasonYear(season),
-        maybePlayoff.map(PlayoffRound(_)),
         HomeTeam(home),
         AwayTeam(away),
-        EloPreHomeTeam(eloPreHomeTeam), 
+        EloPreHomeTeam(eloPreHomeTeam),
         EloPreAwayTeam(eloPreAwayTeam), 
         EloProbHomeTeam(eloProbHomeTeam), 
         EloProbAwayTeam(eloProbAwayTeam), 
@@ -307,8 +305,3 @@ object Game {
       )
     }
 }
-
-// val games: List[Game] = List(
-//   Game(GameDate(LocalDate.parse("2021-10-03")), SeasonYear(2023), None, HomeTeam("ATL"), AwayTeam("NYM")),
-//   Game(GameDate(LocalDate.parse("2021-10-03")), SeasonYear(2023), None, HomeTeam("STL"), AwayTeam("CHC"))
-// )
