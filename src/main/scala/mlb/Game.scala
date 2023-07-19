@@ -6,38 +6,6 @@ import zio.jdbc.*
 
 import java.time.LocalDate
 
-object HomeTeams {
-
-  opaque type HomeTeam = String
-
-  object HomeTeam {
-
-    def apply(value: String): HomeTeam = value
-
-    def unapply(homeTeam: HomeTeam): String = homeTeam
-  }
-
-  given CanEqual[HomeTeam, HomeTeam] = CanEqual.derived
-  implicit val homeTeamEncoder: JsonEncoder[HomeTeam] = JsonEncoder.string
-  implicit val homeTeamDecoder: JsonDecoder[HomeTeam] = JsonDecoder.string
-}
-
-object AwayTeams {
-
-  opaque type AwayTeam = String
-
-  object AwayTeam {
-
-    def apply(value: String): AwayTeam = value
-
-    def unapply(awayTeam: AwayTeam): String = awayTeam
-  }
-
-  given CanEqual[AwayTeam, AwayTeam] = CanEqual.derived
-  implicit val awayTeamEncoder: JsonEncoder[AwayTeam] = JsonEncoder.string
-  implicit val awayTeamDecoder: JsonDecoder[AwayTeam] = JsonDecoder.string
-}
-
 object GameDates {
 
   opaque type GameDate = LocalDate
@@ -72,24 +40,36 @@ object SeasonYears {
   implicit val seasonYearEncoder: JsonEncoder[SeasonYear] = JsonEncoder.int
   implicit val seasonYearDecoder: JsonDecoder[SeasonYear] = JsonDecoder.int
 }
+object HomeTeams {
 
-object PlayoffRounds {
+  opaque type HomeTeam = String
 
-  opaque type PlayoffRound <: Int = Int
+  object HomeTeam {
 
-  object PlayoffRound {
+    def apply(value: String): HomeTeam = value
 
-    def apply(round: Int): PlayoffRound = round
-
-    def safe(value: Int): Option[PlayoffRound] =
-      Option.when(value >= 1 && value <= 4)(value)
-
-    def unapply(playoffRound: PlayoffRound): Int = playoffRound
+    def unapply(homeTeam: HomeTeam): String = homeTeam
   }
 
-  given CanEqual[PlayoffRound, PlayoffRound] = CanEqual.derived
-  implicit val playoffRoundEncoder: JsonEncoder[PlayoffRound] = JsonEncoder.int
-  implicit val playoffRoundDEncoder: JsonDecoder[PlayoffRound] = JsonDecoder.int
+  given CanEqual[HomeTeam, HomeTeam] = CanEqual.derived
+  implicit val homeTeamEncoder: JsonEncoder[HomeTeam] = JsonEncoder.string
+  implicit val homeTeamDecoder: JsonDecoder[HomeTeam] = JsonDecoder.string
+}
+
+object AwayTeams {
+
+  opaque type AwayTeam = String
+
+  object AwayTeam {
+
+    def apply(value: String): AwayTeam = value
+
+    def unapply(awayTeam: AwayTeam): String = awayTeam
+  }
+
+  given CanEqual[AwayTeam, AwayTeam] = CanEqual.derived
+  implicit val awayTeamEncoder: JsonEncoder[AwayTeam] = JsonEncoder.string
+  implicit val awayTeamDecoder: JsonDecoder[AwayTeam] = JsonDecoder.string
 }
 
 object EloPreHomeTeams {
@@ -164,7 +144,7 @@ object EloProbAwayTeams {
       implicit val eloProbAwayTeamDecoder: JsonDecoder[EloProbAwayTeam] = JsonDecoder.double
 }
 
-object EloPostHomeTeams {
+/*object EloPostHomeTeams {
     
   opaque type EloPostHomeTeam <: Double = Double
 
@@ -202,7 +182,7 @@ object EloPostAwayTeams {
   // JSON encoder and decoder for EloPostHomeTeam
   implicit val eloPostHomeTeamEncoder: JsonEncoder[EloPostHomeTeam] = JsonEncoder.double
   implicit val eloPostHomeTeamDencoder: JsonDecoder[EloPostHomeTeam] = JsonDecoder.double
-}
+}*/
 
 object PitcherHomeTeams {
     
@@ -237,7 +217,6 @@ object PitcherAwayTeams {
 }
 
 import GameDates.*
-import PlayoffRounds.*
 import SeasonYears.*
 import HomeTeams.*
 import AwayTeams.*

@@ -39,7 +39,7 @@ object MlbApi extends ZIOAppDefault {
     // Endpoint for API Welcome
     case Method.GET -> Root / "welcome" =>
       ZIO.succeed(Response.text("Welcome on Major League Baseball API").withStatus(Status.NotImplemented))
-    case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam =>
+    case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam => //tofix
       for {
         game: Option[Game] <- latest(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = latestGameResponse(game)
@@ -55,7 +55,7 @@ object MlbApi extends ZIOAppDefault {
         count: Option[Int] <- count
         res: Response = countResponse(count)
       } yield res
-    case Method.GET -> Root / "games" / "history" / aTeam =>
+    case Method.GET -> Root / "games" / "history" / aTeam => //tofix
       for{
         games: List[Game] <- lastTenGames(HomeTeam(aTeam), AwayTeam(aTeam))
         res: Response = historyReponse(games)
@@ -68,7 +68,7 @@ object MlbApi extends ZIOAppDefault {
   val appLogic: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
     conn <- create
     // Path to CSV file (to be adapted to your environment)
-    source <- ZIO.succeed(CSVReader.open(("src\\csvfiles\\mlb_elo.csv")))
+    source <- ZIO.succeed(CSVReader.open(("/Users/victortran/IdeaProjects/scala_project2_api/src/csvfiles/mlb_elo.csv")))
     //Stream = List()
     stream <- ZStream
       // Read CSV file as string sequence stream
