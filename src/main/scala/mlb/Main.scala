@@ -68,7 +68,7 @@ object MlbApi extends ZIOAppDefault {
   val appLogic: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
     conn <- create
     // Path to CSV file (to be adapted to your environment)
-    source <- ZIO.succeed(CSVReader.open(("/Users/victortran/IdeaProjects/scala_project2_api/src/csvfiles/mlb_elo.csv")))
+    source <- ZIO.succeed(CSVReader.open(("src/csvfiles/mlb_elo.csv")))
     //Stream = List()
     stream <- ZStream
       // Read CSV file as string sequence stream
