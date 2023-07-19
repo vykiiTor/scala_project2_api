@@ -28,7 +28,7 @@ object MlbApi extends ZIOAppDefault {
     case Method.GET -> Root / "init" =>
       ZIO.succeed(Response.text("Not Implemented").withStatus(Status.NotImplemented))
 
-      // endpoint for future help info
+    // Endpoint for future help info
     case Method.GET -> Root / "help" =>
       ZIO.succeed(Response.json(
         """{
@@ -46,8 +46,8 @@ object MlbApi extends ZIOAppDefault {
       } yield res
     case Method.GET -> Root / "game" / "predict" / homeTeam / awayTeam =>
       for{
-        probHomeTeam: Option[Double] <- getEloProbHome(HomeTeam(homeTeam),AwayTeam(awayTeam))
-        probAwayTeam: Option[Double] <- getEloProbAway(HomeTeam(homeTeam),AwayTeam(awayTeam))
+        probHomeTeam: Option[Double] <- getEloProbHome(HomeTeam(homeTeam), AwayTeam(awayTeam))
+        probAwayTeam: Option[Double] <- getEloProbAway(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = predictResponse(homeTeam, probHomeTeam, awayTeam, probAwayTeam)
       } yield res
     case Method.GET -> Root / "games" / "count" =>
@@ -57,7 +57,7 @@ object MlbApi extends ZIOAppDefault {
       } yield res
     case Method.GET -> Root / "games" / "history" / aTeam =>
       for{
-        games: List[Game] <- lastTenGames(HomeTeam(aTeam),AwayTeam(aTeam))
+        games: List[Game] <- lastTenGames(HomeTeam(aTeam), AwayTeam(aTeam))
         res: Response = historyReponse(games)
       }yield res
     case _ =>
@@ -68,9 +68,6 @@ object MlbApi extends ZIOAppDefault {
   val appLogic: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
     conn <- create
     // Path to CSV file (to be adapted to your environment)
-    //WHEN RUN METHOD USE THIS PATH:
-    //source <- ZIO.succeed(CSVReader.open(("rest\\src\\CsvFiles\\mlb_elo.csv")))
-    //WHEN USING SBT USE THIS PATH:
     source <- ZIO.succeed(CSVReader.open(("src\\csvfiles\\mlb_elo.csv")))
     //Stream = List()
     stream <- ZStream
@@ -89,7 +86,7 @@ object MlbApi extends ZIOAppDefault {
         val pitcherHome = PitcherHomeTeams.PitcherHomeTeam(values(14))
         val pitcherAway = PitcherAwayTeams.PitcherAwayTeam(values(15))
 
-        Game(date, season, homeTeam, awayTeam,eloPreHome,eloPreAway, eloProbHome, eloProbAway,pitcherHome,pitcherAway)
+        Game(date, season, homeTeam, awayTeam, eloPreHome, eloPreAway, eloProbHome, eloProbAway, pitcherHome, pitcherAway)
       }
       // Group sets by batches of 1000 to insert them in the database
       .grouped(1000)
@@ -196,7 +193,7 @@ object DataService {
     val rows: List[Game.Row] = games.map(_.toRow)
     transaction {
       insert(
-        sql"INSERT INTO games(date, season, homeTeam, awayTeam, homeScore, awayScore, eloProbHome, eloProbAway)".values[Game.Row](rows)
+        sql"INSERT INTO games(date, season_year, home_team, away_team, elo_pre_home, elo_pre_away, elo_prob_home, elo_prob_away, pitcher1_home, pitcher1_away)".values[Game.Row](rows)
       )
     }
   }
