@@ -91,18 +91,174 @@ object PlayoffRounds {
   implicit val playoffRoundDEncoder: JsonDecoder[PlayoffRound] = JsonDecoder.int
 }
 
+object EloPreHomeTeams {
+  
+    opaque type EloPreHomeTeam <: Double = Double
+  
+    object EloPreHomeTeam {
+  
+      // Apply method to create an EloPreHomeTeam from a Double
+      def apply(eloPreHomeTeam: Double): EloPreHomeTeam = eloPreHomeTeam
+  
+      // Unapply method to extract the underlying Double from an EloPreHomeTeam
+      def unapply(eloPreHomeTeam: EloPreHomeTeam): Double = eloPreHomeTeam
+    }
+  
+    // Equality for EloPreHomeTeam
+    given CanEqual[EloPreHomeTeam, EloPreHomeTeam] = CanEqual.derived
+    // JSON encoder and decoder for EloPreHomeTeam
+    implicit val eloPreHomeTeamEncoder: JsonEncoder[EloPreHomeTeam] = JsonEncoder.double
+    implicit val eloPreHomeTeamDencoder: JsonDecoder[EloPreHomeTeam] = JsonDecoder.double
+}
+
+object EloPreAwayTeams {
+    
+      opaque type EloPreAwayTeam <: Double = Double
+    
+      object EloPreAwayTeam {
+    
+        // Apply method to create an EloPreAwayTeam from a Double
+        def apply(eloPreAwayTeam: Double): EloPreAwayTeam = eloPreAwayTeam
+    
+        // Unapply method to extract the underlying Double from an EloPreAwayTeam
+        def unapply(eloPreAwayTeam: EloPreAwayTeam): Double = eloPreAwayTeam
+      }
+    
+      // Equality for EloPreAwayTeam
+      given CanEqual[EloPreAwayTeam, EloPreAwayTeam] = CanEqual.derived
+      // JSON encoder and decoder for EloPreAwayTeam
+      implicit val eloPreAwayTeamEncoder: JsonEncoder[EloPreAwayTeam] = JsonEncoder.double
+      implicit val eloPreAwayTeamDencoder: JsonDecoder[EloPreAwayTeam] = JsonDecoder.double
+}
+
+object EloProbHomeTeams {
+      
+    opaque type EloProbHomeTeam = Double
+  
+    object EloProbHomeTeam {
+  
+      def apply(value: Double): EloProbHomeTeam = value
+  
+      def unapply(eloProbHomeTeam: EloProbHomeTeam): Double = eloProbHomeTeam
+    }
+  
+    given CanEqual[EloProbHomeTeam, EloProbHomeTeam] = CanEqual.derived
+    implicit val eloProbHomeTeamEncoder: JsonEncoder[EloProbHomeTeam] = JsonEncoder.double
+    implicit val eloProbHomeTeamDecoder: JsonDecoder[EloProbHomeTeam] = JsonDecoder.double
+}
+
+object EloProbAwayTeams {
+          
+      opaque type EloProbAwayTeam = Double
+    
+      object EloProbAwayTeam {
+    
+        def apply(value: Double): EloProbAwayTeam = value
+    
+        def unapply(eloProbAwayTeam: EloProbAwayTeam): Double = eloProbAwayTeam
+      }
+    
+      given CanEqual[EloProbAwayTeam, EloProbAwayTeam] = CanEqual.derived
+      implicit val eloProbAwayTeamEncoder: JsonEncoder[EloProbAwayTeam] = JsonEncoder.double
+      implicit val eloProbAwayTeamDecoder: JsonDecoder[EloProbAwayTeam] = JsonDecoder.double
+}
+
+object EloPostHomeTeams {
+    
+  opaque type EloPostHomeTeam <: Double = Double
+
+  object EloPostHomeTeam {
+
+    // Apply method to create an EloPostHomeTeam from a Double
+    def apply(eloPostHomeTeam: Double): EloPostHomeTeam = eloPostHomeTeam
+
+    // Unapply method to extract the underlying Double from an EloPostHomeTeam
+    def unapply(eloPostHomeTeam: EloPostHomeTeam): Double = eloPostHomeTeam
+  }
+
+  // Equality for EloPostHomeTeam
+  given CanEqual[EloPostHomeTeam, EloPostHomeTeam] = CanEqual.derived
+  // JSON encoder and decoder for EloPostHomeTeam
+  implicit val eloPostHomeTeamEncoder: JsonEncoder[EloPostHomeTeam] = JsonEncoder.double
+  implicit val eloPostHomeTeamDencoder: JsonDecoder[EloPostHomeTeam] = JsonDecoder.double
+}
+
+object EloPostAwayTeams {
+      
+  opaque type EloPostHomeTeam <: Double = Double
+
+  object EloPostHomeTeam {
+
+    // Apply method to create an EloPostHomeTeam from a Double
+    def apply(eloPostHomeTeam: Double): EloPostHomeTeam = eloPostHomeTeam
+
+    // Unapply method to extract the underlying Double from an EloPostHomeTeam
+    def unapply(eloPostHomeTeam: EloPostHomeTeam): Double = eloPostHomeTeam
+  }
+
+  // Equality for EloPostHomeTeam
+  given CanEqual[EloPostHomeTeam, EloPostHomeTeam] = CanEqual.derived
+  // JSON encoder and decoder for EloPostHomeTeam
+  implicit val eloPostHomeTeamEncoder: JsonEncoder[EloPostHomeTeam] = JsonEncoder.double
+  implicit val eloPostHomeTeamDencoder: JsonDecoder[EloPostHomeTeam] = JsonDecoder.double
+}
+
+object PitcherHomeTeams {
+    
+  opaque type PitcherHomeTeam = String
+
+  object PitcherHomeTeam {
+
+    def apply(value: String): PitcherHomeTeam = value
+
+    def unapply(pitcherHomeTeam: PitcherHomeTeam): String = pitcherHomeTeam
+  }
+
+  given CanEqual[PitcherHomeTeam, PitcherHomeTeam] = CanEqual.derived
+  implicit val pitcherHomeTeamEncoder: JsonEncoder[PitcherHomeTeam] = JsonEncoder.string
+  implicit val pitcherHomeTeamDecoder: JsonDecoder[PitcherHomeTeam] = JsonDecoder.string
+}
+
+object PitcherAwayTeams {
+    
+  opaque type PitcherAwayTeam = String
+
+  object PitcherAwayTeam {
+
+    def apply(value: String): PitcherAwayTeam = value
+
+    def unapply(pitcherAwayTeam: PitcherAwayTeam): String = pitcherAwayTeam
+  }
+
+  given CanEqual[PitcherAwayTeam, PitcherAwayTeam] = CanEqual.derived
+  implicit val pitcherAwayTeamEncoder: JsonEncoder[PitcherAwayTeam] = JsonEncoder.string
+  implicit val pitcherAwayTeamDecoder: JsonDecoder[PitcherAwayTeam] = JsonDecoder.string
+}
+
 import GameDates.*
 import PlayoffRounds.*
 import SeasonYears.*
 import HomeTeams.*
 import AwayTeams.*
+import EloPreHomeTeams.*
+import EloPreAwayTeams.*
+import EloProbHomeTeams.*
+import EloProbAwayTeams.*
+import PitcherHomeTeams.*
+import PitcherAwayTeams.*
 
 final case class Game(
     date: GameDate,
     season: SeasonYear,
     playoffRound: Option[PlayoffRound],
     homeTeam: HomeTeam,
-    awayTeam: AwayTeam
+    awayTeam: AwayTeam,
+    eloPreHomeTeam: EloPreHomeTeam,
+    eloPreAwayTeam: EloPreAwayTeam,
+    eloProbHomeTeam: EloProbHomeTeam,
+    eloProbAwayTeam: EloProbAwayTeam,
+    pitcherHomeTeam: PitcherHomeTeam,
+    pitcherAwayTeam: PitcherAwayTeam
 )
 
 object Game {
@@ -111,36 +267,48 @@ object Game {
   implicit val gameEncoder: JsonEncoder[Game] = DeriveJsonEncoder.gen[Game]
   implicit val gameDecoder: JsonDecoder[Game] = DeriveJsonDecoder.gen[Game]
 
-  def unapply(game: Game): (GameDate, SeasonYear, Option[PlayoffRound], HomeTeam, AwayTeam) =
-    (game.date, game.season, game.playoffRound, game.homeTeam, game.awayTeam)
+  def unapply(game: Game): (GameDate, SeasonYear, Option[PlayoffRound], HomeTeam, AwayTeam, EloPreHomeTeam, EloPreAwayTeam, EloProbHomeTeam, EloProbAwayTeam, PitcherHomeTeam, PitcherAwayTeam) =
+    (game.date, game.season, game.playoffRound, game.homeTeam, game.awayTeam, game.eloPreHomeTeam, game.eloPreAwayTeam, game.eloProbHomeTeam, game.eloProbAwayTeam, game.pitcherHomeTeam, game.pitcherAwayTeam)
 
   // a custom decoder from a tuple
-  type Row = (String, Int, Option[Int], String, String)
+  type Row = (String, Int, Option[Int], String, String, Double, Double, Double, Double, String, String)
 
   extension (g:Game)
     def toRow: Row =
-      val (d, y, p, h, a) = Game.unapply(g)
+      val (d, y, p, h, a, eloPreHomeTeam, eloPreAwayTeam, eloProbHomeTeam, eloProbAwayTeam, pitcherHomeTeam, pitcherAwayTeam) = Game.unapply(g)
       (
         GameDate.unapply(d).toString,
         SeasonYear.unapply(y),
         p.map(PlayoffRound.unapply),
         HomeTeam.unapply(h),
-        AwayTeam.unapply(a)
+        AwayTeam.unapply(a),
+        EloPreHomeTeam.unapply(eloPreHomeTeam), 
+        EloPreAwayTeam.unapply(eloPreAwayTeam), 
+        EloProbHomeTeam.unapply(eloProbHomeTeam), 
+        EloProbAwayTeam.unapply(eloProbAwayTeam), 
+        PitcherHomeTeam.unapply(pitcherHomeTeam), 
+        PitcherAwayTeam.unapply(pitcherAwayTeam)
       )
 
   implicit val jdbcDecoder: JdbcDecoder[Game] = JdbcDecoder[Row]().map[Game] { t =>
-      val (date, season, maybePlayoff, home, away) = t
+      val (date, season, maybePlayoff, home, away, eloPreHomeTeam, eloPreAwayTeam, eloProbHomeTeam, eloProbAwayTeam, pitcherHomeTeam, pitcherAwayTeam) = t
       Game(
         GameDate(LocalDate.parse(date)),
         SeasonYear(season),
         maybePlayoff.map(PlayoffRound(_)),
         HomeTeam(home),
-        AwayTeam(away)
+        AwayTeam(away),
+        EloPreHomeTeam(eloPreHomeTeam), 
+        EloPreAwayTeam(eloPreAwayTeam), 
+        EloProbHomeTeam(eloProbHomeTeam), 
+        EloProbAwayTeam(eloProbAwayTeam), 
+        PitcherHomeTeam(pitcherHomeTeam), 
+        PitcherAwayTeam(pitcherAwayTeam)
       )
     }
 }
 
-val games: List[Game] = List(
-  Game(GameDate(LocalDate.parse("2021-10-03")), SeasonYear(2023), None, HomeTeam("ATL"), AwayTeam("NYM")),
-  Game(GameDate(LocalDate.parse("2021-10-03")), SeasonYear(2023), None, HomeTeam("STL"), AwayTeam("CHC"))
-)
+// val games: List[Game] = List(
+//   Game(GameDate(LocalDate.parse("2021-10-03")), SeasonYear(2023), None, HomeTeam("ATL"), AwayTeam("NYM")),
+//   Game(GameDate(LocalDate.parse("2021-10-03")), SeasonYear(2023), None, HomeTeam("STL"), AwayTeam("CHC"))
+// )
