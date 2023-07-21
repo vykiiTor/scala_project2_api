@@ -20,52 +20,64 @@ object MlbApi extends ZIOAppDefault {
   import AwayTeams._
 
   val static: App[Any] = Http.collect[Request] {
-    case Method.GET -> Root / "text" => Response.text("Hello MLB Fans!")
-    case Method.GET -> Root / "json" => Response.json("""{"greetings": "Hello MLB Fans!"}""")
+    case Method.GET -> Root / "text" => Response.text("Hello MLB Fans!").withStatus(Status.Ok)
+    case Method.GET -> Root / "json" => Response.json("""{"greetings": "Hello MLB Fans!"}""").withStatus(Status.Ok)
   }.withDefaultErrorResponse
 
   val endpoints: App[ZConnectionPool] = Http.collectZIO[Request] {
+    // Endpoint for checking database initialization
     case Method.GET -> Root / "init" =>
-      ZIO.succeed(Response.text("Not Implemented").withStatus(Status.NotImplemented))
+      for {
+        count: Option[Int] <- count
+        res: Response = initResponse(count)
+      } yield res
 
     // Endpoint for future help info
     case Method.GET -> Root / "help" =>
-      ZIO.succeed(Response.json(
-        """{
-              "/help": "Endpoint for API Help",
-              "/welcome": "Endpoint for API Welcome",
-              "/game/latest/{homeTeam}/{awayTeam}": "Endpoint for latest game between two teams",
-              "/game/predict/{homeTeam}/{awayTeam}": "Endpoint for prediction of a game between two teams",
-              "/games/count": "Endpoint for number of games in historical data",
-              "/games/history/{team}": "Endpoint for last ten games of a team"
-            }""").withStatus(Status.NotImplemented))
+      ZIO.succeed(Response.json("""{"GET /help": "Endpoint for API Help",
+              "GET /welcome": "Endpoint for API Welcome",
+              "GET /game/latest/{homeTeam}/{awayTeam}": "Endpoint for latest game between two teams",
+              "GET /game/predict/{homeTeam}/{awayTeam}": "Endpoint for prediction of a game between two teams",
+              "GET /games/count": "Endpoint for number of games in historical data",
+              "GET /games/history/{team}": "Endpoint for last ten games of a team"}""").withStatus(Status.Ok))
 
     // Endpoint for API Welcome
     case Method.GET -> Root / "welcome" =>
-      ZIO.succeed(Response.text("Welcome on Major League Baseball API").withStatus(Status.NotImplemented))
+      ZIO.succeed(Response.text("Welcome on Major League Baseball API").withStatus(Status.Ok))
+    
+    // Endpoint for latest game between two teams
     case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam =>
       for {
         game: Option[Game] <- latest(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = latestGameResponse(game)
       } yield res
+
+    // Endpoint for prediction of a game between two teams
     case Method.GET -> Root / "game" / "predict" / homeTeam / awayTeam =>
       for{
         probHomeTeam: Option[Double] <- getEloProbHome(HomeTeam(homeTeam), AwayTeam(awayTeam))
         probAwayTeam: Option[Double] <- getEloProbAway(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = predictResponse(homeTeam, probHomeTeam, awayTeam, probAwayTeam)
       } yield res
+
+    // Endpoint for number of games in historical data
     case Method.GET -> Root / "games" / "count" =>
       for {
         count: Option[Int] <- count
         res: Response = countResponse(count)
       } yield res
-    case Method.GET -> Root / "games" / "history" / aTeam => //tofix
+
+    // Endpoint for last ten games of a team
+    case Method.GET -> Root / "games" / "history" / aTeam =>
       for{
         games: List[Game] <- lastTenGames(HomeTeam(aTeam), AwayTeam(aTeam))
         res: Response = historyReponse(games)
       } yield res
+
+    // Endpoint for not found
     case _ =>
       ZIO.succeed(Response.text("Not Found").withStatus(Status.NotFound))
+
   }.withDefaultErrorResponse
 
 
@@ -143,6 +155,13 @@ object ApiService {
     games match
       case Nil => Response.text("No games for this team").withStatus(Status.NotFound)
       case _ => Response.json(s"${games.map(_.toJson)}").withStatus(Status.Ok)
+  }
+
+  def initResponse(count: Option[Int]): Response = {
+    count match
+      case Some(0) => Response.text("Database is initialized but empty").withStatus(Status.Ok)
+      case Some(c) => Response.text("Database is initialized").withStatus(Status.Ok)
+      case None => Response.text("Database is not initialized").withStatus(Status.NotFound)
   }
 }
 
