@@ -144,6 +144,8 @@ object EloProbAwayTeams {
       implicit val eloProbAwayTeamDecoder: JsonDecoder[EloProbAwayTeam] = JsonDecoder.double
 }
 
+
+// unfinished data modelisation for the api call
 /*object EloPostHomeTeams {
     
   opaque type EloPostHomeTeam <: Double = Double

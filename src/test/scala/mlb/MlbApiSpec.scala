@@ -6,6 +6,11 @@ import zio.*
 
 class MlbApiSpec extends munit.ZSuite {
 
+  /**
+   * Tests using enpoinds of val static are functionnal due to Http.collect[Request]
+   * However tests using endpoinds from val endpoints are not successful. None value maybe because of Http.collectZIO[Request] miss used
+   */
+
   val app: App[Any] = mlb.MlbApi.static
 
   testZ("GET / - 404") {
@@ -30,6 +35,7 @@ class MlbApiSpec extends munit.ZSuite {
       response <- app.runZIO(req)
     } yield assertEquals(response, shouldBe)
   }
+
 
   // testZ("GET /help") {
   //   val req = Request.get(URL(Root / "help"))
