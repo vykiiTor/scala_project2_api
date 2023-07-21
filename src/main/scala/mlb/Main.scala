@@ -32,12 +32,12 @@ object MlbApi extends ZIOAppDefault {
     case Method.GET -> Root / "help" =>
       ZIO.succeed(Response.json(
         """{
-              "/help": "Endpoint for API Help",
-              "/welcome": "Endpoint for API Welcome",
-              "/game/latest/{homeTeam}/{awayTeam}": "Endpoint for latest game between two teams",
-              "/game/predict/{homeTeam}/{awayTeam}": "Endpoint for prediction of a game between two teams",
-              "/games/count": "Endpoint for number of games in historical data",
-              "/games/history/{team}": "Endpoint for last ten games of a team"
+              "GET /help": "Endpoint for API Help",
+              "GET /welcome": "Endpoint for API Welcome",
+              "GET /game/latest/{homeTeam}/{awayTeam}": "Endpoint for latest game between two teams",
+              "GET /game/predict/{homeTeam}/{awayTeam}": "Endpoint for prediction of a game between two teams",
+              "GET /games/count": "Endpoint for number of games in historical data",
+              "GET /games/history/{team}": "Endpoint for last ten games of a team"
             }""").withStatus(Status.NotImplemented))
 
     // Endpoint for API Welcome
